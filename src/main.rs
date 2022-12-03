@@ -11,6 +11,7 @@ use structopt::StructOpt;
 mod days;
 
 use days::day1;
+use days::day2;
 
 #[derive(StructOpt)]
 struct Opt {
@@ -25,7 +26,11 @@ fn default_error_handler<E: Debug, R>(error: E) -> R {
 
 fn main() {
     let opt = Opt::from_args();
-    let programs = HashMap::from([(1, Box::new(|lines| day1::run(lines)))]);
+    let mut programs: HashMap<i32, Box<dyn Fn(Vec<String>) -> Result<_, _>>> = HashMap::new();
+
+    programs.insert(1, Box::new(|lines| day1::run(lines)));
+    programs.insert(2, Box::new(|lines| day2::run(lines)));
+
     let program = programs
         .get(&opt.day)
         .unwrap_or_else(|| default_error_handler(format!("Undefined day: {}", opt.day).as_str()));
