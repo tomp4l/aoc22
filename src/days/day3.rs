@@ -1,4 +1,4 @@
-use std::collections::{HashSet, LinkedList};
+use std::collections::HashSet;
 
 #[derive(Debug)]
 struct Backpack<'a> {
@@ -42,7 +42,7 @@ impl<'a> Backpack<'a> {
     }
 }
 
-fn common_badge((b1, b2, b3): (Backpack, Backpack, Backpack)) -> i32 {
+fn common_badge((b1, b2, b3): (&Backpack, &Backpack, &Backpack)) -> i32 {
     let i1: HashSet<char> = b1
         .full_set()
         .intersection(&b2.full_set())
@@ -77,23 +77,13 @@ pub fn run(lines: Vec<String>) -> Result<(), String> {
     let part1: i32 = parsed.iter().map(|i| i.common_score()).sum();
     println!("Part 1 {}", part1);
 
-    let mut grouped = LinkedList::new();
-    let mut iter = parsed.into_iter();
+    let grouped = parsed
+        .as_slice()
+        .chunks(3)
+        .map(|chunk| (&chunk[0], &chunk[1], &chunk[2]))
+        .collect::<Vec<(&Backpack, &Backpack, &Backpack)>>();
 
-    loop {
-        let first = iter.next();
-        let second = iter.next();
-        let third = iter.next();
-
-        let next = match (first, second, third) {
-            (Some(a), Some(b), Some(c)) => (a, b, c),
-            _ => break,
-        };
-
-        grouped.push_front(next)
-    }
-
-    let part2: i32 = grouped.into_iter().map(common_badge).sum();
+    let part2: i32 = grouped.into_iter().map(|t| common_badge(t)).sum();
 
     println!("Part 2 {}", part2);
 
