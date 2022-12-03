@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 enum Rps {
     Rock,
     Paper,
@@ -116,7 +116,7 @@ impl Round {
 
 impl OutcomeRound {
     fn to_round(&self) -> Round {
-        let opponent = self.opponent.clone();
+        let opponent = self.opponent;
         let you = match (&self.opponent, &self.outcome) {
             (Rps::Rock, Outcome::Lose) => Rps::Scissors,
             (Rps::Rock, Outcome::Win) => Rps::Paper,
@@ -124,7 +124,7 @@ impl OutcomeRound {
             (Rps::Paper, Outcome::Win) => Rps::Scissors,
             (Rps::Scissors, Outcome::Lose) => Rps::Paper,
             (Rps::Scissors, Outcome::Win) => Rps::Rock,
-            (other, Outcome::Draw) => other.clone(),
+            (other, Outcome::Draw) => *other,
         };
         Round { opponent, you }
     }
