@@ -41,11 +41,11 @@ fn parts(lines: Vec<Option<i32>>) {
     let mut all_collected = grouped.collected;
     all_collected.push_back(grouped.current);
 
-    let part1 = all_collected.iter().map(|i| *i).max().unwrap_or_default();
+    let part1 = all_collected.iter().copied().max().unwrap_or_default();
 
     println!("Part 1: {}", part1);
 
-    let mut sorted: Vec<_> = all_collected.iter().map(|i| *i).collect();
+    let mut sorted: Vec<_> = all_collected.iter().copied().collect();
     sorted.sort();
     sorted.reverse();
     sorted.truncate(3);
