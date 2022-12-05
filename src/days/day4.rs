@@ -52,5 +52,5 @@ pub fn run(lines: Vec<String>) -> Result<(), String> {
 
     println!("Part 2: {}", part2);
 
-    todo!()
+    Ok(())
 }
