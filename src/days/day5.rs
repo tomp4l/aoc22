@@ -118,6 +118,47 @@ impl Instruction {
     }
 }
 
+impl ToString for Stacks {
+    fn to_string(&self) -> String {
+        let mut keys = self
+            .crates
+            .keys()
+            .map(|u| u.to_string())
+            .collect::<Vec<_>>();
+        keys.sort();
+
+        let header = format!(" {} ", keys.join("   "));
+
+        let mut i = 0;
+        let mut lines = vec![header];
+        loop {
+            let mut crates = self
+                .crates
+                .iter()
+                .map(|(k, v)| (k, v.get(i)))
+                .collect::<Vec<_>>();
+
+            crates.sort_by_key(|(k, _)| *k);
+
+            if crates.iter().all(|(_, v)| v.is_none()) {
+                break;
+            }
+
+            let line = crates
+                .into_iter()
+                .map(|(_, v)| v.map_or("   ".to_string(), |v| format!("[{}]", v.label)))
+                .collect::<Vec<_>>()
+                .join(" ");
+
+            lines.push(line);
+            i += 1
+        }
+
+        lines.reverse();
+        lines.join("\n")
+    }
+}
+
 pub fn run(lines: Vec<String>) -> Result<(), String> {
     let point = lines.partition_point(|l| !(l.is_empty() || l.starts_with("move")));
 
