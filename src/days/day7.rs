@@ -1,22 +1,35 @@
-use std::collections::HashMap;
-
 pub fn run(lines: Vec<String>) -> Result<(), String> {
     let parsed = lines
         .iter()
         .map(|s| Output::from_str(s))
         .collect::<Result<Vec<_>, _>>()?;
 
-    let root = Dir::from_output(parsed);
-    let small = root.find_small_dirs();
-    let part1: u32 = small.iter().map(|v| v.1).sum();
+    let mut fs = Fs::from_output(parsed);
+
+    let sized = fs.sized_dirs();
+
+    let part1: u32 = sized
+        .iter()
+        .filter_map(|s| if s.size <= 100000 { Some(s.size) } else { None })
+        .sum();
 
     println!("Part 1 {}", part1);
 
-    let size = root.dir_sizes().total();
+    let size = sized.last().unwrap().size;
     let available = 70000000 - size;
     let to_delete = 30000000 - available;
 
-    let part2 = root.find_smallest(to_delete);
+    let part2 = sized
+        .iter()
+        .filter_map(|s| {
+            if s.size >= to_delete {
+                Some(s.size)
+            } else {
+                None
+            }
+        })
+        .min()
+        .unwrap_or_default();
 
     println!("Part 2 {}", part2);
 
@@ -78,158 +91,126 @@ impl Output {
     }
 }
 
-#[derive(Debug)]
 struct Dir {
     name: String,
-    content: Vec<Fs>,
+    sub_dirs: Vec<usize>,
+    parent: Option<usize>,
+    files: Vec<File>,
+    maybe_size: Option<u32>,
 }
+struct File(String, u32);
 
-#[derive(Debug)]
-enum Fs {
-    Dir(Dir),
-    File(String, u32),
-}
-
-impl Dir {
-    fn from_output<T: IntoIterator<Item = Output>>(output: T) -> Dir {
-        let mut current_id = 0;
-        let mut current_dir = current_id;
-
-        let mut dirs = HashMap::new();
-        dirs.insert(
-            current_id,
-            (
-                "/".to_string(),
-                Vec::<(String, i32)>::new(), // dir name + id
-                Vec::new(),                  // files
-                None,
-            ),
-        );
-
-        for output in output.into_iter() {
-            match output {
-                Output::Command(Command::Ls) => (),
-                Output::Command(Command::Cd(dir)) => {
-                    if dir != "/" {
-                        let t = dirs.get(&current_dir).unwrap();
-                        if dir == ".." {
-                            current_dir = t.3.unwrap()
-                        } else {
-                            let d = t.1.iter().find(|(n, _)| *n == dir).unwrap();
-                            current_dir = d.1
-                        }
-                    }
-                }
-                Output::Ls(LsOut::File(name, size)) => {
-                    let file = Fs::File(name, size);
-                    let t = dirs.get_mut(&current_dir).unwrap();
-                    t.2.push(file);
-                }
-                Output::Ls(LsOut::Dir(name)) => {
-                    current_id += 1;
-                    let parent = Some(current_dir);
-                    dirs.insert(current_id, (name.clone(), Vec::new(), Vec::new(), parent));
-                    let t = dirs.get_mut(&current_dir).unwrap();
-                    t.1.push((name.to_string(), current_id));
-                }
-            }
-        }
-
-        let mut built_dirs = HashMap::new();
-
-        loop {
-            if dirs.is_empty() {
-                break;
-            }
-            let keys = dirs.keys().copied().collect::<Vec<_>>();
-            for k in keys {
-                let v = dirs.get(&k).unwrap();
-                let all_dirs = v.1.iter().map(|v| v.1).all(|k| built_dirs.contains_key(&k));
-
-                if all_dirs {
-                    let v1 = dirs.remove(&k).unwrap();
-
-                    let mut ds: Vec<_> =
-                        v1.1.into_iter()
-                            .map(|(_, k)| Fs::Dir(built_dirs.remove(&k).unwrap()))
-                            .collect();
-                    ds.extend(v1.2);
-                    let dir = Dir {
-                        name: v1.0,
-                        content: ds,
-                    };
-                    built_dirs.insert(k, dir);
-                }
-            }
-        }
-
-        built_dirs.remove(&0).unwrap()
-    }
-
-    fn dir_sizes(&self) -> SizedDir {
-        let files: u32 = self
-            .content
-            .iter()
-            .map(|f| match f {
-                Fs::File(_, s) => *s,
-                Fs::Dir(_) => 0,
-            })
-            .sum();
-
-        let dirs: Vec<_> = self
-            .content
-            .iter()
-            .filter_map(|f| match f {
-                Fs::File(_, _) => None,
-                Fs::Dir(dir) => Some((dir.name.clone(), dir.dir_sizes().total())),
-            })
-            .collect();
-
-        SizedDir { files, dirs }
-    }
-
-    fn find_small_dirs(&self) -> Vec<(String, u32)> {
-        let mut small: Vec<_> = Vec::new();
-
-        for fs in &self.content {
-            if let Fs::Dir(dir) = fs {
-                let size = dir.dir_sizes().total();
-                if size < 100000 {
-                    small.push((dir.name.clone(), size));
-                }
-                small.extend(dir.find_small_dirs());
-            }
-        }
-
-        small
-    }
-
-    fn find_smallest(&self, min_size: u32) -> u32 {
-        let mut smallest_size = self.dir_sizes().total();
-        for fs in &self.content {
-            if let Fs::Dir(dir) = fs {
-                if dir.dir_sizes().total() >= min_size {
-                    let size = dir.find_smallest(min_size);
-                    if size <= smallest_size {
-                        smallest_size = size;
-                    }
-                }
-            }
-        }
-
-        smallest_size
-    }
+const ROOT: usize = 0;
+struct Fs {
+    pwd: usize,
+    dirs: Vec<Dir>,
 }
 
 #[derive(Debug)]
 struct SizedDir {
-    files: u32,
-    dirs: Vec<(String, u32)>,
+    size: u32,
 }
 
-impl SizedDir {
-    fn total(&self) -> u32 {
-        let dirs: u32 = self.dirs.iter().map(|v| v.1).sum();
-        dirs + self.files
+impl Fs {
+    fn new() -> Self {
+        Fs {
+            pwd: ROOT,
+            dirs: vec![Dir {
+                name: "/".to_string(),
+                sub_dirs: Vec::new(),
+                parent: None,
+                files: Vec::new(),
+                maybe_size: None,
+            }],
+        }
+    }
+
+    fn cd(&mut self, dir: &str) {
+        if dir == "/" {
+            self.pwd = ROOT;
+        } else if dir == ".." {
+            if let Some(p) = self.dirs[self.pwd].parent {
+                self.pwd = p
+            }
+        } else {
+            if let Some(p) = self.dirs[self.pwd]
+                .sub_dirs
+                .iter()
+                .copied()
+                .find(|d| self.dirs[*d].name == dir)
+            {
+                self.pwd = p;
+            }
+        }
+    }
+
+    fn touch(&mut self, name: &str, size: u32) {
+        self.dirs[self.pwd].files.push(File(name.to_string(), size))
+    }
+
+    fn mkdir(&mut self, name: &str) {
+        let dir = Dir {
+            name: name.to_string(),
+            sub_dirs: Vec::new(),
+            parent: Some(self.pwd),
+            files: Vec::new(),
+            maybe_size: None,
+        };
+        let id = self.dirs.len();
+        self.dirs.push(dir);
+        self.dirs[self.pwd].sub_dirs.push(id);
+    }
+
+    fn from_output<T: IntoIterator<Item = Output>>(output: T) -> Self {
+        let mut fs = Fs::new();
+        for output in output.into_iter() {
+            match output {
+                Output::Command(Command::Ls) => (),
+                Output::Command(Command::Cd(dir)) => {
+                    fs.cd(&dir);
+                }
+                Output::Ls(LsOut::File(name, size)) => {
+                    fs.touch(&name, size);
+                }
+                Output::Ls(LsOut::Dir(name)) => fs.mkdir(&name),
+            }
+        }
+        fs
+    }
+
+    fn sized_dirs(&mut self) -> Vec<SizedDir> {
+        let mut sized = Vec::new();
+
+        let sizes: Vec<_> = self
+            .dirs
+            .iter_mut()
+            .enumerate()
+            .map(|(i, d)| (i, d.maybe_size))
+            .rev()
+            .collect();
+
+        for (i, s) in sizes {
+            if let Some(size) = s {
+                sized.push(SizedDir { size });
+            } else {
+                let d = &self.dirs[i];
+                let file_size: u32 = d.files.iter().map(|f| f.1).sum();
+
+                let dir_size: u32 = d
+                    .sub_dirs
+                    .iter()
+                    .map(|d| {
+                        self.dirs[*d]
+                            .maybe_size
+                            .expect("filled in by previous iteration")
+                    })
+                    .sum();
+                let size = file_size + dir_size;
+                sized.push(SizedDir { size });
+                self.dirs[i].maybe_size = Some(size);
+            }
+        }
+
+        sized
     }
 }
