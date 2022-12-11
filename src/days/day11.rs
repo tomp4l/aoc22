@@ -113,22 +113,18 @@ struct RoundStats {
     inspections: Vec<i32>,
 }
 
-fn round(monkeys: &mut Vec<Monkey>, reduce_worry: bool) -> RoundStats {
+fn round(monkeys: &mut [Monkey], reduce_worry: bool) -> RoundStats {
     let mut inspections = vec![0; monkeys.len()];
     let worry_reduction = if reduce_worry { 3 } else { 1 };
     let overall_divisibility = monkeys.iter().map(|m| m.divisibility).product::<i32>();
 
     for i in 0..monkeys.len() {
-        let monkey = monkeys.get_mut(i).unwrap();
+        let monkey = &mut monkeys[i];
         let items = mem::replace(&mut monkey.items, Vec::new());
-        let if_true = monkey.if_true;
-        let if_false = monkey.if_false;
-        let item_count = inspections.get_mut(i).unwrap();
-        *item_count = items.len() as i32;
+        inspections[i] = items.len() as i32;
 
         let mut true_values = Vec::new();
         let mut false_values = Vec::new();
-
         for item in items {
             let next_worry = monkey.operation.apply(item.into()) / worry_reduction;
             let mod_worry = (next_worry % overall_divisibility as i64) as i32;
@@ -140,11 +136,10 @@ fn round(monkeys: &mut Vec<Monkey>, reduce_worry: bool) -> RoundStats {
             };
         }
 
-        let true_monkey = monkeys.get_mut(if_true).unwrap();
-        true_monkey.items.extend(true_values);
-
-        let false_monkey = monkeys.get_mut(if_false).unwrap();
-        false_monkey.items.extend(false_values);
+        let if_true = monkey.if_true;
+        let if_false = monkey.if_false;
+        monkeys[if_true].items.extend(true_values);
+        monkeys[if_false].items.extend(false_values);
     }
 
     RoundStats { inspections }
