@@ -58,7 +58,7 @@ fn part2(parsed: &Vec<Instruction>) {
     pixels.chunks(40).for_each(|l| {
         let line = l
             .iter()
-            .map(|b| if *b { "#" } else { "." })
+            .map(|b| if *b { "#" } else { " " })
             .collect::<String>();
         println!("{}", line)
     });
