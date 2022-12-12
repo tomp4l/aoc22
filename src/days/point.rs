@@ -1,4 +1,4 @@
-#[derive(Hash, Eq, PartialEq, Clone, Debug)]
+#[derive(Hash, Eq, PartialEq, Clone, Debug, PartialOrd, Ord)]
 pub struct Point2d(i32, i32);
 
 impl Point2d {
