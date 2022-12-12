@@ -7,19 +7,25 @@ pub fn run(lines: Vec<String>) -> Result<(), String> {
 
     println!(
         "Part 1 {}",
-        distance(&grid.start(), &grid).unwrap_or_default()
+        distance(
+            &grid.start(),
+            &grid,
+            |e| e.is_highest(),
+            |c, n| n.can_traverse(c)
+        )
+        .unwrap_or_default()
     );
 
-    // I could go backwards from 'E' to any 'a' but I'm lazy, brute force is fast enough
-    let part2 = grid
-        .0
-        .iter()
-        .filter(|(_, e)| e.height() == 1)
-        .filter_map(|(p, _)| distance(p, &grid))
-        .min()
-        .unwrap_or_default();
-
-    println!("Part 2 {}", part2);
+    println!(
+        "Part 2 {}",
+        distance(
+            &grid.end(),
+            &grid,
+            |e| e.height() == 1,
+            |c, n| c.can_traverse(n)
+        )
+        .unwrap_or_default()
+    );
 
     Ok(())
 }
@@ -50,8 +56,8 @@ impl Elevation {
         }
     }
 
-    fn can_traverse(&self, to: &Self) -> bool {
-        self.height() - 1 <= to.height()
+    fn can_traverse(&self, from: &Self) -> bool {
+        self.height() - 1 <= from.height()
     }
 
     fn is_highest(&self) -> bool {
@@ -62,7 +68,11 @@ impl Elevation {
     }
 }
 
-fn distance(start: &Point2d, grid: &Grid) -> Option<u32> {
+fn distance<F1, F2>(start: &Point2d, grid: &Grid, target: F1, can_traverse: F2) -> Option<u32>
+where
+    F1: Fn(&Elevation) -> bool,
+    F2: Fn(&Elevation, &Elevation) -> bool,
+{
     let mut visited = HashSet::new();
     let mut positions = VecDeque::new();
     positions.push_back(PositionDistance(0, start.clone()));
@@ -76,8 +86,8 @@ fn distance(start: &Point2d, grid: &Grid) -> Option<u32> {
             for n in neighbours {
                 if !visited.contains(&n) {
                     if let Some(e) = grid.0.get(&n) {
-                        if e.can_traverse(current) {
-                            if e.is_highest() {
+                        if can_traverse(current, e) {
+                            if target(e) {
                                 return Some(next.0 + 1);
                             }
                             positions.push_back(PositionDistance(1 + next.0, n.clone()));
@@ -120,6 +130,15 @@ impl Grid {
         self.0
             .iter()
             .find(|(_, e)| **e == Elevation::Lowest)
+            .unwrap()
+            .0
+            .clone()
+    }
+
+    fn end(&self) -> Point2d {
+        self.0
+            .iter()
+            .find(|(_, e)| **e == Elevation::Highest)
             .unwrap()
             .0
             .clone()
