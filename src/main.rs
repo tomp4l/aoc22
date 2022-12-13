@@ -23,9 +23,11 @@ fn default_error_handler<E: Debug, R>(error: E) -> R {
     exit(1);
 }
 
+type Programs = HashMap<i32, Box<dyn Fn(Vec<String>) -> Result<(), String>>>;
+
 fn main() {
     let opt = Opt::from_args();
-    let mut programs: HashMap<i32, Box<dyn Fn(Vec<String>) -> Result<_, _>>> = HashMap::new();
+    let mut programs: Programs = HashMap::new();
     programs.insert(1, Box::new(day1::run));
     programs.insert(2, Box::new(day2::run));
     programs.insert(3, Box::new(day3::run));

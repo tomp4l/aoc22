@@ -77,21 +77,19 @@ impl FromStr for OutcomeRound {
 
 impl Round {
     fn score(&self) -> i32 {
-        let win = match self {
+        let win = matches!(
+            self,
             Round {
                 opponent: Rps::Rock,
                 you: Rps::Paper,
-            } => true,
-            Round {
+            } | Round {
                 opponent: Rps::Paper,
                 you: Rps::Scissors,
-            } => true,
-            Round {
+            } | Round {
                 opponent: Rps::Scissors,
                 you: Rps::Rock,
-            } => true,
-            _ => false,
-        };
+            }
+        );
         let draw = self.opponent == self.you;
 
         let choice_score = match self.you {
@@ -102,12 +100,10 @@ impl Round {
 
         let round_score = if win {
             6
+        } else if draw {
+            3
         } else {
-            if draw {
-                3
-            } else {
-                0
-            }
+            0
         };
 
         choice_score + round_score

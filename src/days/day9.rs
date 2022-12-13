@@ -37,7 +37,7 @@ impl Move {
     fn from_str(str: &str) -> Result<Move, String> {
         if str.len() > 2 {
             let amount = str[2..].parse::<i32>().map_err(|e| e.to_string())?;
-            match str.chars().nth(0).unwrap() {
+            match str.chars().next().unwrap() {
                 'U' => Ok(Move::Up(amount)),
                 'D' => Ok(Move::Down(amount)),
                 'L' => Ok(Move::Left(amount)),
@@ -97,7 +97,7 @@ impl Bridge {
             let mut current = self.head.clone();
 
             for tail in self.tails.iter_mut() {
-                if !current.is_neighbour(&tail) {
+                if !current.is_neighbour(tail) {
                     let dx = current.x() - tail.x();
                     let dy = current.y() - tail.y();
                     let mut next_tail = tail.clone();

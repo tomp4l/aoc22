@@ -6,16 +6,22 @@ struct Pair {
 
 impl Pair {
     fn from_str(str: &str) -> Result<Self, String> {
-        let first_split = str.find("-").ok_or("Missing first -")?;
-        let comma = str.find(",").ok_or("Missing ,")?;
-        let second_split = comma + str[comma..].find("-").ok_or("Missing second -")?;
+        let first_split = str.find('-').ok_or("Missing first -")?;
+        let comma = str.find(',').ok_or("Missing ,")?;
+        let second_split = comma + str[comma..].find('-').ok_or("Missing second -")?;
 
-        let f1 = u8::from_str_radix(&str[..first_split], 10).map_err(|e| format!("{}", e))?;
-        let f2 =
-            u8::from_str_radix(&str[first_split + 1..comma], 10).map_err(|e| format!("{}", e))?;
-        let s1 =
-            u8::from_str_radix(&str[comma + 1..second_split], 10).map_err(|e| format!("{}", e))?;
-        let s2 = u8::from_str_radix(&str[second_split + 1..], 10).map_err(|e| format!("{}", e))?;
+        let f1 = str[..first_split]
+            .parse::<u8>()
+            .map_err(|e| format!("{}", e))?;
+        let f2 = str[first_split + 1..comma]
+            .parse::<u8>()
+            .map_err(|e| format!("{}", e))?;
+        let s1 = str[comma + 1..second_split]
+            .parse::<u8>()
+            .map_err(|e| format!("{}", e))?;
+        let s2 = str[second_split + 1..]
+            .parse::<u8>()
+            .map_err(|e| format!("{}", e))?;
 
         Ok(Pair {
             first: (f1, f2),

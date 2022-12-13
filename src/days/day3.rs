@@ -57,8 +57,8 @@ fn common_badge((b1, b2, b3): (&Backpack, &Backpack, &Backpack)) -> i32 {
 }
 
 fn score(char: char) -> i32 {
-    const LOWERCASE_A: u8 = 'a' as u8;
-    const UPPERCASE_A: u8 = 'A' as u8;
+    const LOWERCASE_A: u8 = b'a';
+    const UPPERCASE_A: u8 = b'A';
 
     let char_code = char as u8;
 
@@ -77,13 +77,12 @@ pub fn run(lines: Vec<String>) -> Result<(), String> {
     let part1: i32 = parsed.iter().map(|i| i.common_score()).sum();
     println!("Part 1 {}", part1);
 
-    let grouped = parsed
+    let part2: i32 = parsed
         .as_slice()
         .chunks(3)
         .map(|chunk| (&chunk[0], &chunk[1], &chunk[2]))
-        .collect::<Vec<(&Backpack, &Backpack, &Backpack)>>();
-
-    let part2: i32 = grouped.into_iter().map(|t| common_badge(t)).sum();
+        .map(common_badge)
+        .sum();
 
     println!("Part 2 {}", part2);
 

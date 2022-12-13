@@ -57,7 +57,7 @@ impl Stacks {
         Ok(Stacks { crates })
     }
 
-    fn from_to(&mut self, inst: &Instruction) -> Option<(&mut Vec<Crate>, &mut Vec<Crate>)> {
+    fn get_from_to(&mut self, inst: &Instruction) -> Option<(&mut Vec<Crate>, &mut Vec<Crate>)> {
         let mut from = None;
         let mut to = None;
         for (k, v) in self.crates.iter_mut() {
@@ -71,7 +71,7 @@ impl Stacks {
     }
 
     fn apply_instruction(&mut self, inst: &Instruction) {
-        if let Some((from, to)) = self.from_to(inst) {
+        if let Some((from, to)) = self.get_from_to(inst) {
             for _ in 0..inst.amount {
                 if let Some(next) = from.pop() {
                     to.push(next)
@@ -81,7 +81,7 @@ impl Stacks {
     }
 
     fn apply_instruction_9001(&mut self, inst: &Instruction) {
-        if let Some((from, to)) = self.from_to(inst) {
+        if let Some((from, to)) = self.get_from_to(inst) {
             let mut removed = from
                 .drain((from.len() - inst.amount as usize)..)
                 .collect::<Vec<_>>();

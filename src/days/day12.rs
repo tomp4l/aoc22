@@ -52,7 +52,7 @@ impl Elevation {
         match self {
             Elevation::Highest => 26,
             Elevation::Lowest => 1,
-            Elevation::Level(l) => *l as u8 - 'a' as u8 + 1,
+            Elevation::Level(l) => *l as u8 - b'a' + 1,
         }
     }
 
@@ -61,10 +61,7 @@ impl Elevation {
     }
 
     fn is_highest(&self) -> bool {
-        match self {
-            Elevation::Highest => true,
-            _ => false,
-        }
+        matches!(self, Elevation::Highest)
     }
 }
 

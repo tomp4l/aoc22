@@ -56,8 +56,7 @@ enum Output {
 
 impl Command {
     fn from_str(str: &str) -> Result<Command, String> {
-        if str.starts_with("$ cd ") {
-            let dir = &str[5..];
+        if let Some(dir) = str.strip_prefix("$ cd ") {
             Ok(Command::Cd(dir.to_string()))
         } else {
             Ok(Command::Ls)
@@ -67,11 +66,10 @@ impl Command {
 
 impl LsOut {
     fn from_str(str: &str) -> Result<LsOut, String> {
-        if str.starts_with("dir ") {
-            let name = &str[4..];
+        if let Some(name) = str.strip_prefix("dir ") {
             Ok(LsOut::Dir(name.to_string()))
         } else {
-            let split = str.find(" ").ok_or("could not find")?;
+            let split = str.find(' ').ok_or("could not find")?;
             let name = str[split + 1..].to_string();
             let size = str[..split].parse::<u32>().map_err(|e| e.to_string())?;
             Ok(LsOut::File(name, size))
@@ -81,7 +79,7 @@ impl LsOut {
 
 impl Output {
     fn from_str(str: &str) -> Result<Output, String> {
-        if str.starts_with("$") {
+        if str.starts_with('$') {
             let command = Command::from_str(str)?;
             Ok(Output::Command(command))
         } else {
@@ -132,15 +130,13 @@ impl Fs {
             if let Some(p) = self.dirs[self.pwd].parent {
                 self.pwd = p
             }
-        } else {
-            if let Some(p) = self.dirs[self.pwd]
-                .sub_dirs
-                .iter()
-                .copied()
-                .find(|d| self.dirs[*d].name == dir)
-            {
-                self.pwd = p;
-            }
+        } else if let Some(p) = self.dirs[self.pwd]
+            .sub_dirs
+            .iter()
+            .copied()
+            .find(|d| self.dirs[*d].name == dir)
+        {
+            self.pwd = p;
         }
     }
 

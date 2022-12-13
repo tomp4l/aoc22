@@ -5,10 +5,10 @@ pub fn run(lines: Vec<String>) -> Result<(), String> {
     part(2, &lines, 10000, false)
 }
 
-fn part(n: i32, lines: &Vec<String>, iterations: i32, reduce_worry: bool) -> Result<(), String> {
+fn part(n: i32, lines: &[String], iterations: i32, reduce_worry: bool) -> Result<(), String> {
     let mut monkeys = lines
         .split(|l| l.is_empty())
-        .map(|c| Monkey::from_strs(c))
+        .map(Monkey::from_strs)
         .collect::<Result<Vec<_>, _>>()?;
 
     let mut all_rounds = vec![0; monkeys.len()];
@@ -25,7 +25,7 @@ fn part(n: i32, lines: &Vec<String>, iterations: i32, reduce_worry: bool) -> Res
     all_rounds.reverse();
 
     let monkey_business =
-        (*all_rounds.get(0).unwrap() as i64) * (*all_rounds.get(1).unwrap() as i64);
+        (*all_rounds.first().unwrap() as i64) * (*all_rounds.get(1).unwrap() as i64);
 
     println!("Part {} {}", n, monkey_business);
     Ok(())
@@ -71,7 +71,7 @@ impl Monkey {
 
         let operation_start = "  Operation: new = old ".len();
         let operation_rest = &strs[2][operation_start..];
-        let operation = if operation_rest.starts_with("*") {
+        let operation = if operation_rest.starts_with('*') {
             if let Ok(i) = operation_rest[2..].parse::<i32>() {
                 Operation::Mult(i)
             } else {
@@ -120,7 +120,7 @@ fn round(monkeys: &mut [Monkey], reduce_worry: bool) -> RoundStats {
 
     for i in 0..monkeys.len() {
         let monkey = &mut monkeys[i];
-        let items = mem::replace(&mut monkey.items, Vec::new());
+        let items = mem::take(&mut monkey.items);
         inspections[i] = items.len() as i32;
 
         let mut true_values = Vec::new();

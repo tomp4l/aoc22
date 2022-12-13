@@ -20,8 +20,8 @@ enum Instruction {
 
 impl Instruction {
     fn from_str(str: &str) -> Result<Self, String> {
-        if str.starts_with("addx ") {
-            let x = str[5..].parse::<i32>().map_err(|e| e.to_string())?;
+        if let Some(s) = str.strip_prefix("addx ") {
+            let x = s.parse::<i32>().map_err(|e| e.to_string())?;
             Ok(Instruction::Addx(x))
         } else {
             Ok(Instruction::Noop)
@@ -66,7 +66,7 @@ fn part2(parsed: &Vec<Instruction>) {
 
 fn computer<F>(parsed: &Vec<Instruction>, mut fun: F)
 where
-    F: FnMut(i32, i32) -> (),
+    F: FnMut(i32, i32),
 {
     let mut cycle = 1;
     let mut pointer = 0;

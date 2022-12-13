@@ -7,7 +7,7 @@ fn markers(str: &str, size: usize) -> usize {
         .as_slice()
         .windows(size)
         .map(|w| {
-            let set: HashSet<char, RandomState> = HashSet::from_iter(w.into_iter().copied());
+            let set: HashSet<char, RandomState> = HashSet::from_iter(w.iter().copied());
             set.len()
         })
         .take_while(|l| *l != size)
