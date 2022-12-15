@@ -2,8 +2,14 @@ use std::collections::HashMap;
 
 use super::point::Point2d;
 
+const PRINT: bool = false;
+
 pub fn run(lines: Vec<String>) -> Result<(), String> {
     let mut caves = Caves::from_strs(&lines);
+
+    if PRINT {
+        caves.print();
+    }
 
     let mut sand = 0;
     while caves.drop_sand() {
@@ -12,12 +18,20 @@ pub fn run(lines: Vec<String>) -> Result<(), String> {
 
     println!("Part 1 {}", sand);
 
+    if PRINT {
+        caves.print();
+    }
+
     caves.with_floor();
     while caves.drop_sand() {
         sand += 1;
     }
 
     println!("Part 2 {}", sand);
+
+    if PRINT {
+        caves.print();
+    }
 
     Ok(())
 }
@@ -123,5 +137,29 @@ impl Caves {
         }
 
         settled
+    }
+
+    fn print(&self) {
+        let map = &self.0;
+        let min_x = map.keys().min_by_key(|p| p.x()).unwrap().x();
+        let min_y = map.keys().min_by_key(|p| p.y()).unwrap().y();
+
+        let max_x = map.keys().max_by_key(|p| p.x()).unwrap().x();
+        let max_y = map.keys().max_by_key(|p| p.y()).unwrap().y();
+
+        for y in min_y..max_y + 1 {
+            for x in min_x..max_x + 1 {
+                if let Some(p) = map.get(&Point2d::new(x, y)) {
+                    if matches!(p, Occupied::Rock) {
+                        print!("#");
+                    } else {
+                        print!("o");
+                    }
+                } else {
+                    print!(" ");
+                }
+            }
+            println!()
+        }
     }
 }
