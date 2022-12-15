@@ -94,7 +94,7 @@ impl Caves {
             return false;
         }
 
-        let mut position = start.clone();
+        let mut position = start;
         let has_floor = self.2;
         let min_y = self.bottom();
 
