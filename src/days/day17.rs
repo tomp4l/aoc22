@@ -32,7 +32,7 @@ pub fn run(lines: Vec<String>) -> Result<(), String> {
 
     println!("Part 1: {}", part1);
 
-    let mut blasts = Blasts::new(parsed.clone());
+    let mut blasts = Blasts::new(parsed);
     let mut chamber = Chamber::new();
 
     let mut last_height = 0;
@@ -76,7 +76,7 @@ pub fn run(lines: Vec<String>) -> Result<(), String> {
 
             let mut remainder = deltas.clone();
             while let Some(r) = remainder.strip_suffix(repetition) {
-                remainder = r.iter().copied().collect();
+                remainder = r.to_vec();
             }
 
             let rem_len: u64 = remainder.len().try_into().unwrap();
@@ -257,9 +257,9 @@ impl Chamber {
             let draw = rock.draw(next_x);
 
             let mut conflicts = false;
-            for x in 0..draw.len() {
+            for (x, rock_row) in draw.iter().enumerate() {
                 if let Some(row) = self.occupied.get(i + x) {
-                    conflicts = row.iter().zip(draw[x]).any(|(l, r)| *l && r);
+                    conflicts = row.iter().zip(rock_row).any(|(l, r)| *l && *r);
                     if conflicts {
                         break;
                     }
@@ -273,9 +273,9 @@ impl Chamber {
             let draw = rock.draw(x);
             let mut conflicts = false;
             if i > 0 {
-                for x in 0..draw.len() {
+                for (x, row_rock) in draw.iter().enumerate() {
                     if let Some(row) = self.occupied.get(i - 1 + x) {
-                        conflicts = row.iter().zip(draw[x]).any(|(l, r)| *l && r);
+                        conflicts = row.iter().zip(row_rock).any(|(l, r)| *l && *r);
                         if conflicts {
                             break;
                         }
@@ -284,9 +284,9 @@ impl Chamber {
             }
 
             if i == 0 || conflicts {
-                for x in 0..draw.len() {
-                    for j in 0..7 {
-                        self.occupied[i + x][j] = self.occupied[i + x][j] || draw[x][j];
+                for (x, row) in draw.iter().enumerate() {
+                    for (j, r) in row.iter().enumerate() {
+                        self.occupied[i + x][j] = self.occupied[i + x][j] || *r;
                     }
                 }
 
@@ -295,6 +295,7 @@ impl Chamber {
         }
     }
 
+    #[allow(dead_code)]
     fn print(&self) {
         for x in self.occupied.iter().rev() {
             for b in x {
