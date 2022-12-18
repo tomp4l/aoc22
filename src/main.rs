@@ -45,6 +45,7 @@ fn main() {
     programs.insert(15, Box::new(day15::run));
     programs.insert(16, Box::new(day16::run));
     programs.insert(17, Box::new(day17::run));
+    programs.insert(18, Box::new(day18::run));
 
     let program = programs
         .get(&opt.day)
