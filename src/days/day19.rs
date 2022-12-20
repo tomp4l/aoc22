@@ -108,17 +108,53 @@ impl Blueprint {
         ])
     }
 
-    fn simulate(&self, time: i32, start_robots: &HashMap<Resource, i32>) -> u8 {
+    fn max_costs(&self) -> HashMap<Resource, u8> {
+        let mut all_costs: Vec<_> = self
+            .ore_cost
+            .0
+            .iter()
+            .chain(self.clay_cost.0.iter())
+            .chain(self.obsidian_cost.0.iter())
+            .chain(self.geode_cost.0.iter())
+            .collect();
+
+        all_costs.sort();
+        all_costs.reverse();
+        all_costs.dedup_by_key(|t| t.0);
+
+        HashMap::from_iter(
+            all_costs
+                .into_iter()
+                .map(|(k, v)| (k.to_owned(), v.to_owned())),
+        )
+    }
+
+    fn simulate(&self, time: u8, start_robots: &HashMap<Resource, i32>) -> u8 {
         let start_state = State::new(start_robots);
         let mut states = HashMap::from([(start_state.robots, HashSet::from([start_state]))]);
+        let max_costs = self.max_costs();
 
-        for _ in (0..time).rev() {
+        for i in (0..time).rev() {
             for state in std::mem::take(&mut states).values().flatten() {
                 let mut next_state = state.clone();
                 next_state.process_resources();
                 let mut next_states = vec![next_state];
 
                 for (resource, cost) in self.costs() {
+                    if let Some(max_cost) = max_costs.get(&resource) {
+                        let robot_count = state.robot_count(&resource);
+                        let resource_count = state.resource_count(&resource);
+                        if &robot_count >= max_cost {
+                            continue;
+                        }
+
+                        let max_resources = resource_count + robot_count * i;
+                        let turns = max_resources / max_cost;
+                        if turns >= i {
+                            continue;
+                        }
+                    }
+
                     let mut next_state = state.clone();
 
                     let mut has_resources = true;
@@ -202,6 +238,14 @@ impl State {
             Resource::Obsidian => 2,
             Resource::Geode => 3,
         }
+    }
+
+    fn robot_count(&self, resource: &Resource) -> u8 {
+        self.robots[Self::index(resource)]
+    }
+
+    fn resource_count(&self, resource: &Resource) -> u8 {
+        self.resources[Self::index(resource)]
     }
 
     fn take_resource(&mut self, resoure: &Resource, amount: u8) -> bool {
