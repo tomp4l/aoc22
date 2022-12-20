@@ -99,7 +99,7 @@ struct Cube {
 
 impl Cube {
     fn from_str(str: &str) -> Result<Self, String> {
-        let mut split = str.split(",");
+        let mut split = str.split(',');
 
         let x = split
             .next()

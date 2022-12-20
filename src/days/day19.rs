@@ -112,7 +112,7 @@ impl Blueprint {
         let start_state = State::new(start_robots);
         let mut states = HashMap::from([(start_state.robots, HashSet::from([start_state]))]);
 
-        for i in (0..time).rev() {
+        for _ in (0..time).rev() {
             for state in std::mem::take(&mut states).values().flatten() {
                 let mut next_state = state.clone();
                 next_state.process_resources();
