@@ -115,9 +115,9 @@ enum Monkey {
 fn parse(str: &str) -> Result<(String, Monkey), String> {
     let mut split = str.split(": ");
 
-    let name = split.next().ok_or("no name".to_owned())?.to_owned();
+    let name = split.next().ok_or_else(|| "no name".to_owned())?.to_owned();
 
-    let op = split.next().ok_or("no op".to_owned())?;
+    let op = split.next().ok_or_else(|| "no op".to_owned())?;
 
     let parsed_monkey = op.parse::<f64>().map(Monkey::Val).or_else(|_| {
         let split = op.split(' ').collect::<Vec<_>>();

@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::{cmp::Ordering, collections::VecDeque};
 
 const ENCRYPTION_KEY: i64 = 811589153;
 
@@ -41,11 +41,11 @@ fn decrypt(encrypted: &mut VecDeque<(usize, i64)>) {
         } else {
             let mut i = (current_i as i64 + current.1) % encrypted.len() as i64;
 
-            if i < 0 {
-                i += encrypted.len() as i64;
-            } else if i == 0 {
-                i = encrypted.len() as i64;
-            }
+            match i.cmp(&0) {
+                Ordering::Less => i += encrypted.len() as i64,
+                Ordering::Equal => i = encrypted.len() as i64,
+                Ordering::Greater => (),
+            };
 
             i.try_into().unwrap()
         };

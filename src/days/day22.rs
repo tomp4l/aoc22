@@ -75,7 +75,7 @@ impl Path {
         let mut rot = Rot::Left;
         let mut distance = Vec::new();
 
-        while let Some(c) = chars.next() {
+        for c in chars {
             if c == 'L' || c == 'R' {
                 if !distance.is_empty() {
                     let d: String = std::mem::take(&mut distance).into_iter().collect();
@@ -99,7 +99,7 @@ impl Path {
 
         Path {
             forward: first.into_iter().collect::<String>().parse::<u8>().unwrap(),
-            rest: rest,
+            rest,
         }
     }
 
@@ -311,223 +311,166 @@ impl Map {
             let u = up_face(side, &sides);
             let d = down_face(side, &sides);
 
-            if l.is_some() {
-                let left = l.unwrap();
+            if let Some(left) = l {
                 if r.is_some() {
-                    todo!()
-                } else {
-                    if u.is_some() {
-                        let up = u.unwrap();
-                        if d.is_some() {
-                            todo!()
-                        } else {
-                            let ld = down_face(left, &sides);
-                            if ld.is_some() {
-                                let down = ld.unwrap();
-                                let uu = up_face(up, &sides);
-                                if uu.is_some() {
-                                    let uur = right_face(uu.unwrap(), &sides);
-                                    if uur.is_some() {
-                                        let right = uur.unwrap();
-                                        let sides = Neighbours(
-                                            side.clone(),
-                                            left.clone(),
-                                            Orient::Right,
-                                            up.clone(),
-                                            Orient::Down,
-                                            right.clone(),
-                                            Orient::Right,
-                                            down.clone(),
-                                            Orient::Right,
-                                        );
-                                        side_faces.push(sides);
-                                    } else {
-                                        todo!();
-                                    }
-                                } else {
-                                    todo!();
-                                }
+                    unimplemented!()
+                } else if let Some(up) = u {
+                    if d.is_some() {
+                        unimplemented!()
+                    } else if let Some(down) = down_face(left, &sides) {
+                        if let Some(uu) = up_face(up, &sides) {
+                            if let Some(right) = right_face(uu, &sides) {
+                                let sides = Neighbours(
+                                    side.clone(),
+                                    left.clone(),
+                                    Orient::Right,
+                                    up.clone(),
+                                    Orient::Down,
+                                    right.clone(),
+                                    Orient::Right,
+                                    down.clone(),
+                                    Orient::Right,
+                                );
+                                side_faces.push(sides);
                             } else {
-                                todo!()
+                                unimplemented!();
                             }
+                        } else {
+                            unimplemented!();
                         }
                     } else {
-                        if d.is_some() {
-                            todo!()
-                        } else {
-                            let ld = down_face(left, &sides);
-                            if ld.is_some() {
-                                let down = ld.unwrap();
-                                let dd = down_face(down, &sides);
-                                if dd.is_some() {
-                                    let right = dd.unwrap();
-                                    let rl = left_face(right, &sides);
-                                    if rl.is_some() {
-                                        let rld = down_face(rl.unwrap(), &sides);
-                                        if rld.is_some() {
-                                            let up = rld.unwrap();
-                                            let sides = Neighbours(
-                                                side.clone(),
-                                                left.clone(),
-                                                Orient::Right,
-                                                up.clone(),
-                                                Orient::Down,
-                                                right.clone(),
-                                                Orient::Right,
-                                                down.clone(),
-                                                Orient::Right,
-                                            );
-                                            side_faces.push(sides);
-                                        } else {
-                                            todo!()
-                                        }
-                                    } else {
-                                        todo!()
-                                    }
-                                } else {
-                                    todo!()
-                                }
-                            } else {
-                                todo!()
-                            }
-                        }
+                        unimplemented!()
                     }
+                } else if d.is_some() {
+                    unimplemented!()
+                } else if let Some(down) = down_face(left, &sides) {
+                    if let Some(right) = down_face(down, &sides) {
+                        if let Some(rl) = left_face(right, &sides) {
+                            if let Some(up) = down_face(rl, &sides) {
+                                let sides = Neighbours(
+                                    side.clone(),
+                                    left.clone(),
+                                    Orient::Right,
+                                    up.clone(),
+                                    Orient::Down,
+                                    right.clone(),
+                                    Orient::Right,
+                                    down.clone(),
+                                    Orient::Right,
+                                );
+                                side_faces.push(sides);
+                            } else {
+                                unimplemented!()
+                            }
+                        } else {
+                            unimplemented!()
+                        }
+                    } else {
+                        unimplemented!()
+                    }
+                } else {
+                    unimplemented!()
+                }
+            } else if let Some(right) = r {
+                if u.is_some() {
+                    unimplemented!()
+                } else if let Some(down) = d {
+                    if let Some(down_down) = down_face(down, &sides) {
+                        if let Some(left) = left_face(down_down, &sides) {
+                            if let Some(up) = down_face(left, &sides) {
+                                let sides = Neighbours(
+                                    side.clone(),
+                                    left.clone(),
+                                    Orient::Left,
+                                    up.clone(),
+                                    Orient::Left,
+                                    right.clone(),
+                                    Orient::Left,
+                                    down.clone(),
+                                    Orient::Up,
+                                );
+                                side_faces.push(sides);
+                            } else {
+                                unimplemented!()
+                            }
+                        } else {
+                            unimplemented!()
+                        }
+                    } else if let Some(up) = up_face(right, &sides) {
+                        if let Some(left) = up_face(up, &sides) {
+                            let sides = Neighbours(
+                                side.clone(),
+                                left.clone(),
+                                Orient::Left,
+                                up.clone(),
+                                Orient::Left,
+                                right.clone(),
+                                Orient::Left,
+                                down.clone(),
+                                Orient::Up,
+                            );
+                            side_faces.push(sides);
+                        } else {
+                            unimplemented!();
+                        }
+                    } else {
+                        unimplemented!()
+                    }
+                } else {
+                    unimplemented!()
+                }
+            } else if let Some(up) = u {
+                if let Some(down) = d {
+                    if let Some(right) = right_face(up, &sides) {
+                        if let Some(left) = left_face(down, &sides) {
+                            let sides = Neighbours(
+                                side.clone(),
+                                left.clone(),
+                                Orient::Up,
+                                up.clone(),
+                                Orient::Down,
+                                right.clone(),
+                                Orient::Down,
+                                down.clone(),
+                                Orient::Up,
+                            );
+                            side_faces.push(sides);
+                        } else {
+                            unimplemented!()
+                        }
+                    } else {
+                        unimplemented!()
+                    }
+                } else if let Some(right) = right_face(up, &sides) {
+                    if let Some(ru) = up_face(right, &sides) {
+                        if let Some(left) = up_face(ru, &sides) {
+                            if let Some(down) = right_face(left, &sides) {
+                                let sides = Neighbours(
+                                    side.clone(),
+                                    left.clone(),
+                                    Orient::Up,
+                                    up.clone(),
+                                    Orient::Down,
+                                    right.clone(),
+                                    Orient::Down,
+                                    down.clone(),
+                                    Orient::Up,
+                                );
+                                side_faces.push(sides);
+                            } else {
+                                unimplemented!()
+                            }
+                        } else {
+                            unimplemented!()
+                        }
+                    } else {
+                        unimplemented!()
+                    }
+                } else {
+                    unimplemented!();
                 }
             } else {
-                if r.is_some() {
-                    let right = r.unwrap();
-                    if u.is_some() {
-                        todo!()
-                    } else {
-                        if d.is_some() {
-                            let down = d.unwrap();
-                            let dd = down_face(down, &sides);
-                            if dd.is_some() {
-                                let down_down = dd.unwrap();
-                                let ddl = left_face(down_down, &sides);
-                                if ddl.is_some() {
-                                    let left = ddl.unwrap();
-                                    let ld = down_face(left, &sides);
-                                    if ld.is_some() {
-                                        let up = ld.unwrap();
-                                        let sides = Neighbours(
-                                            side.clone(),
-                                            left.clone(),
-                                            Orient::Left,
-                                            up.clone(),
-                                            Orient::Left,
-                                            right.clone(),
-                                            Orient::Left,
-                                            down.clone(),
-                                            Orient::Up,
-                                        );
-                                        side_faces.push(sides);
-                                    } else {
-                                        todo!()
-                                    }
-                                } else {
-                                    todo!()
-                                }
-                            } else {
-                                let ru = up_face(right, &sides);
-                                if ru.is_some() {
-                                    let up = ru.unwrap();
-                                    let uu = up_face(up, &sides);
-                                    if uu.is_some() {
-                                        let left = uu.unwrap();
-                                        let sides = Neighbours(
-                                            side.clone(),
-                                            left.clone(),
-                                            Orient::Left,
-                                            up.clone(),
-                                            Orient::Left,
-                                            right.clone(),
-                                            Orient::Left,
-                                            down.clone(),
-                                            Orient::Up,
-                                        );
-                                        side_faces.push(sides);
-                                    } else {
-                                        todo!();
-                                    }
-                                } else {
-                                    todo!()
-                                }
-                            }
-                        } else {
-                            todo!()
-                        }
-                    }
-                } else {
-                    if u.is_some() {
-                        let up = u.unwrap();
-                        if d.is_some() {
-                            let down = d.unwrap();
-                            let ur = right_face(up, &sides);
-                            if ur.is_some() {
-                                let right = ur.unwrap();
-                                let dl = left_face(down, &sides);
-                                if dl.is_some() {
-                                    let left = dl.unwrap();
-                                    let sides = Neighbours(
-                                        side.clone(),
-                                        left.clone(),
-                                        Orient::Up,
-                                        up.clone(),
-                                        Orient::Down,
-                                        right.clone(),
-                                        Orient::Down,
-                                        down.clone(),
-                                        Orient::Up,
-                                    );
-                                    side_faces.push(sides);
-                                } else {
-                                    todo!()
-                                }
-                            } else {
-                                todo!()
-                            }
-                        } else {
-                            let ur = right_face(up, &sides);
-                            if ur.is_some() {
-                                let right = ur.unwrap();
-                                let ru = up_face(right, &sides);
-                                if ru.is_some() {
-                                    let ruu = up_face(ru.unwrap(), &sides);
-                                    if ruu.is_some() {
-                                        let left = ruu.unwrap();
-                                        let lr = right_face(left, &sides);
-                                        if lr.is_some() {
-                                            let down = lr.unwrap();
-                                            let sides = Neighbours(
-                                                side.clone(),
-                                                left.clone(),
-                                                Orient::Up,
-                                                up.clone(),
-                                                Orient::Down,
-                                                right.clone(),
-                                                Orient::Down,
-                                                down.clone(),
-                                                Orient::Up,
-                                            );
-                                            side_faces.push(sides);
-                                        } else {
-                                            todo!()
-                                        }
-                                    } else {
-                                        todo!()
-                                    }
-                                } else {
-                                    todo!()
-                                }
-                            } else {
-                                todo!();
-                            }
-                        }
-                    } else {
-                        todo!();
-                    }
-                }
+                unimplemented!();
             }
         }
 
@@ -615,7 +558,7 @@ impl Map {
                     (Orient::Down, Orient::Right) => {
                         ret = side.1.add_y(pos);
                     }
-                    _ => todo!(),
+                    _ => unimplemented!(),
                 }
             }
         }
