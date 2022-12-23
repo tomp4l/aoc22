@@ -13,7 +13,7 @@ pub fn run(lines: Vec<String>) -> Result<(), String> {
 
     decrypt(&mut encrypted);
 
-    println!("Part 1 {}", sum_coords(&encrypted.make_contiguous()));
+    println!("Part 1 {}", sum_coords(encrypted.make_contiguous()));
 
     let mut real_encrypted: VecDeque<_> = numbers
         .iter()
@@ -26,7 +26,7 @@ pub fn run(lines: Vec<String>) -> Result<(), String> {
         decrypt(&mut real_encrypted);
     }
 
-    println!("Part 2 {}", sum_coords(&real_encrypted.make_contiguous()));
+    println!("Part 2 {}", sum_coords(real_encrypted.make_contiguous()));
 
     Ok(())
 }
