@@ -173,6 +173,17 @@ enum Orient {
     Right,
 }
 
+impl Orient {
+    fn reverse(&self) -> Orient {
+        match self {
+            Orient::Down => Orient::Up,
+            Orient::Up => Orient::Down,
+            Orient::Left => Orient::Right,
+            Orient::Right => Orient::Left,
+        }
+    }
+}
+
 enum Square {
     Empty,
     Rock,
@@ -551,99 +562,60 @@ impl Map {
                 }
             } else {
                 let faces = &self.1;
-
                 let p = point;
 
-                let left = faces
-                    .iter()
-                    .find(|f| f.0 .0.x() == p.x() && f.0 .0.y() <= p.y() && f.0 .2.y() >= p.y());
+                let face = match orient {
+                    Orient::Left => faces.iter().find(|f| {
+                        f.0 .0.x() == p.x() && f.0 .0.y() <= p.y() && f.0 .2.y() >= p.y()
+                    }),
+                    Orient::Right => faces.iter().find(|f| {
+                        f.0 .1.x() == p.x() && f.0 .0.y() <= p.y() && f.0 .2.y() >= p.y()
+                    }),
+                    Orient::Up => faces.iter().find(|f| {
+                        f.0 .0.y() == p.y() && f.0 .0.x() <= p.x() && f.0 .1.x() >= p.x()
+                    }),
+                    Orient::Down => faces.iter().find(|f| {
+                        f.0 .2.y() == p.y() && f.0 .0.x() <= p.x() && f.0 .1.x() >= p.x()
+                    }),
+                };
 
-                let right = faces
-                    .iter()
-                    .find(|f| f.0 .1.x() == p.x() && f.0 .0.y() <= p.y() && f.0 .2.y() >= p.y());
+                let current = &face.unwrap().0;
 
-                let up = faces
-                    .iter()
-                    .find(|f| f.0 .0.y() == p.y() && f.0 .0.x() <= p.x() && f.0 .1.x() >= p.x());
+                let (side, next_orient, pos) = match orient {
+                    Orient::Left => (&face.unwrap().1, &face.unwrap().2, p.y() - current.0.y()),
+                    Orient::Up => (&face.unwrap().3, &face.unwrap().4, p.x() - current.0.x()),
+                    Orient::Right => (&face.unwrap().5, &face.unwrap().6, p.y() - current.0.y()),
+                    Orient::Down => (&face.unwrap().7, &face.unwrap().8, p.x() - current.0.x()),
+                };
 
-                let down = faces
-                    .iter()
-                    .find(|f| f.0 .2.y() == p.y() && f.0 .0.x() <= p.x() && f.0 .1.x() >= p.x());
+                or = next_orient.reverse();
 
-                match orient {
-                    Orient::Left => {
-                        let current = &left.unwrap().0;
-                        let side = &left.unwrap().1;
-                        let orient = &left.unwrap().2;
-
-                        let pos = p.y() - current.0.y();
-
-                        match orient {
-                            Orient::Up => {
-                                ret = side.0.add_x(pos);
-                                or = Orient::Down;
-                            }
-                            Orient::Left => {
-                                ret = side.2.add_y(-pos);
-                                or = Orient::Right;
-                            }
-                            _ => todo!(),
-                        }
+                match (orient, next_orient) {
+                    (Orient::Left, Orient::Up) => {
+                        ret = side.0.add_x(pos);
                     }
-                    Orient::Right => {
-                        let current = &right.unwrap().0;
-                        let side = &right.unwrap().5;
-                        let orient = &right.unwrap().6;
-
-                        let pos = p.y() - current.0.y();
-
-                        match orient {
-                            Orient::Down => {
-                                ret = side.2.add_x(pos);
-                                or = Orient::Up;
-                            }
-                            Orient::Right => {
-                                ret = side.3.add_y(-pos);
-                                or = Orient::Left;
-                            }
-                            _ => todo!(),
-                        }
+                    (Orient::Left, Orient::Left) => {
+                        ret = side.2.add_y(-pos);
                     }
-                    Orient::Up => {
-                        let current = &up.unwrap().0;
-                        let side = &up.unwrap().3;
-                        let orient = &up.unwrap().4;
-
-                        let pos = p.x() - current.0.x();
-                        match orient {
-                            Orient::Left => {
-                                ret = side.0.add_y(pos);
-                                or = Orient::Right;
-                            }
-                            Orient::Down => {
-                                ret = side.2.add_x(pos);
-                                or = Orient::Up;
-                            }
-                            _ => todo!(),
-                        }
+                    (Orient::Right, Orient::Down) => {
+                        ret = side.2.add_x(pos);
                     }
-                    Orient::Down => {
-                        let current = &down.unwrap().0;
-                        let side = &down.unwrap().7;
-                        let orient = &down.unwrap().8;
-                        let pos = p.x() - current.0.x();
-                        match orient {
-                            Orient::Up => {
-                                ret = side.0.add_x(pos);
-                                or = Orient::Down;
-                            }
-                            Orient::Right => {
-                                ret = side.1.add_y(pos);
-                                or = Orient::Left;
-                            }
-                            _ => todo!(),
-                        }
+                    (Orient::Right, Orient::Right) => {
+                        ret = side.3.add_y(-pos);
                     }
+                    (Orient::Up, Orient::Left) => {
+                        ret = side.0.add_y(pos);
+                    }
+                    (Orient::Up, Orient::Down) => {
+                        ret = side.2.add_x(pos);
+                    }
+                    (Orient::Down, Orient::Up) => {
+                        ret = side.0.add_x(pos);
+                    }
+                    (Orient::Down, Orient::Right) => {
+                        ret = side.1.add_y(pos);
+                    }
+                    _ => todo!(),
                 }
             }
         }
