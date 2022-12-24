@@ -21,7 +21,7 @@ struct Valley {
 
 impl Valley {
     fn from_strs(strs: &[String]) -> Self {
-        let mut lines = strs.into_iter();
+        let mut lines = strs.iter();
         let mut blizzards = HashMap::new();
         lines.next();
 
@@ -62,7 +62,8 @@ impl Valley {
         unreachable!()
     }
 
-    fn print(&self) {
+    #[allow(dead_code)]
+    fn print(&self, positions: &HashSet<Point2d>) {
         for y in 1..self.max_y + 1 {
             for x in 1..self.max_x + 1 {
                 if let Some(Blizzard(dir)) = self.blizzards.get(&Point2d::new(x, y)) {
@@ -77,8 +78,10 @@ impl Valley {
                     } else {
                         print!("{}", dir.len());
                     }
+                } else if positions.contains(&Point2d::new(x, y)) {
+                    print!("o")
                 } else {
-                    print!(".")
+                    print!(" ")
                 }
             }
             println!()
@@ -194,14 +197,12 @@ fn parts(valley: &mut Valley) {
                 part2 = true;
                 goal = start.clone();
                 positions = HashSet::from([Point2d::new(valley.max_x, valley.max_y + 1)]);
+            } else if goal == start {
+                goal = end.clone();
+                positions = HashSet::from([start.clone()]);
             } else {
-                if goal == start {
-                    goal = end.clone();
-                    positions = HashSet::from([start.clone()]);
-                } else {
-                    println!("Part 2 {}", minute);
-                    break;
-                }
+                println!("Part 2 {}", minute);
+                break;
             }
         }
         minute += 1;
