@@ -1,4 +1,11 @@
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::{
+    collections::{HashMap, HashSet, VecDeque},
+    sync::{
+        atomic::{AtomicI32, Ordering},
+        Arc, Mutex,
+    },
+    thread,
+};
 
 pub fn run(lines: Vec<String>) -> Result<(), String> {
     let valves = parse(&lines);
@@ -102,63 +109,8 @@ fn distance_between(valves: &HashMap<String, Valve>, from: &str, to: &str) -> i3
     panic!("missing node")
 }
 
-#[derive(Debug)]
-struct State<'a> {
-    opened: HashSet<&'a String>,
-    current: &'a String,
-    pressure: i32,
-    time: i32,
-}
-
 fn part1(valves: &Valves) {
-    let mut max_pressure = 0;
-
-    let mut states = VecDeque::new();
-    let all_valves: HashSet<_> = valves.flows.keys().collect();
-
-    for (v, d) in &valves.dist_start {
-        let flow = valves.flows[v];
-        let time = 30 - d - 1;
-        let pressure = time * flow;
-
-        let state = State {
-            opened: HashSet::from([v]),
-            current: v,
-            pressure,
-            time,
-        };
-        states.push_back(state);
-    }
-
-    while let Some(next) = states.pop_front() {
-        if next.pressure > max_pressure {
-            max_pressure = next.pressure;
-        }
-
-        for p in all_valves.difference(&next.opened) {
-            let distance = valves.dist_between[&(next.current.to_owned(), (*p).to_owned())];
-
-            let next_time = next.time - distance - 1;
-
-            if next_time <= 0 {
-                continue;
-            }
-
-            let next_pressure = next.pressure + next_time * valves.flows[*p];
-
-            let mut opened = next.opened.clone();
-            opened.insert(p);
-            let state = State {
-                opened,
-                current: p,
-                pressure: next_pressure,
-                time: next_time,
-            };
-            states.push_back(state);
-        }
-    }
-
-    println!("Part 1 {}", max_pressure);
+    println!("Part 1: {}", parts(valves, 30, false))
 }
 
 #[derive(Debug)]
@@ -172,21 +124,25 @@ struct StateElephant<'a> {
 }
 
 fn part2(valves: &Valves) {
-    let mut max_pressure = 0;
+    println!("Part 2: {}", parts(valves, 26, true))
+}
+
+fn parts(valves: &Valves, moves: i32, has_elephant: bool) -> i32 {
+    let max_pressure = Arc::new(AtomicI32::new(0));
 
     let mut states = VecDeque::new();
     let all_valves: HashSet<_> = valves.flows.keys().collect();
 
     for (v, d) in &valves.dist_start {
         for (v_e, d_e) in &valves.dist_start {
-            if v != v_e {
+            if has_elephant && v != v_e || !has_elephant && v == v_e {
                 let flow = valves.flows[v];
-                let time = 26 - d - 1;
+                let time = moves - d - 1;
                 let pressure = time * flow;
 
                 let flow_e = valves.flows[v_e];
-                let time_e = 26 - d_e - 1;
-                let pressure_e = time_e * flow_e;
+                let time_e = moves - d_e - 1;
+                let pressure_e = if has_elephant { time_e * flow_e } else { 0 };
 
                 let state = StateElephant {
                     opened: HashSet::from([v, v_e]),
@@ -201,16 +157,27 @@ fn part2(valves: &Valves) {
         }
     }
 
+    let num_threads = std::thread::available_parallelism()
+        .map(|u| u.get())
+        .unwrap_or(1);
+
+    let batch_size = 100;
+
     while let Some(next) = states.pop_front() {
-        if next.pressure > max_pressure {
-            max_pressure = next.pressure;
+        if states.len() > num_threads * 100 {
+            break;
         }
 
-        let (time, current, is_elephant) = if next.current_time > next.elephant_time {
-            (next.current_time, next.current_pos, false)
-        } else {
-            (next.elephant_time, next.elephant_pos, true)
-        };
+        if next.pressure > max_pressure.load(Ordering::Relaxed) {
+            max_pressure.store(next.pressure, Ordering::Relaxed);
+        }
+
+        let (time, current, is_elephant) =
+            if !has_elephant || next.current_time > next.elephant_time {
+                (next.current_time, next.current_pos, false)
+            } else {
+                (next.elephant_time, next.elephant_pos, true)
+            };
 
         for p in all_valves.difference(&next.opened) {
             let distance = valves.dist_between[&(current.to_owned(), (*p).to_owned())];
@@ -249,5 +216,82 @@ fn part2(valves: &Valves) {
         }
     }
 
-    println!("Part 2 {}", max_pressure);
+    thread::scope(|s| {
+        let mutex = Arc::new(Mutex::new(states));
+
+        for _ in 0..num_threads {
+            let data = mutex.clone();
+            let max_pressure = max_pressure.clone();
+            let all_valves = all_valves.clone();
+            s.spawn(move || loop {
+                let mut states = Vec::new();
+                {
+                    let mut all_states = data.lock().unwrap();
+
+                    if all_states.is_empty() {
+                        break;
+                    }
+                    for _ in 0..batch_size {
+                        if let Some(x) = all_states.pop_front() {
+                            states.push(x);
+                        }
+                    }
+                }
+
+                let mut new_states = Vec::new();
+
+                while let Some(next) = states.pop() {
+                    if next.pressure > max_pressure.load(Ordering::Relaxed) {
+                        max_pressure.store(next.pressure, Ordering::Relaxed);
+                    }
+                    let (time, current, is_elephant) =
+                        if !has_elephant || next.current_time > next.elephant_time {
+                            (next.current_time, next.current_pos, false)
+                        } else {
+                            (next.elephant_time, next.elephant_pos, true)
+                        };
+
+                    for p in all_valves.difference(&next.opened) {
+                        let distance = valves.dist_between[&(current.to_owned(), (*p).to_owned())];
+
+                        let next_time = time - distance - 1;
+
+                        if next_time <= 0 {
+                            continue;
+                        }
+
+                        let next_pressure = next.pressure + next_time * valves.flows[*p];
+
+                        let mut opened = next.opened.clone();
+                        opened.insert(p);
+
+                        let state = if is_elephant {
+                            StateElephant {
+                                opened,
+                                current_pos: next.current_pos,
+                                elephant_pos: p,
+                                pressure: next_pressure,
+                                current_time: next.current_time,
+                                elephant_time: next_time,
+                            }
+                        } else {
+                            StateElephant {
+                                opened,
+                                current_pos: p,
+                                elephant_pos: next.elephant_pos,
+                                pressure: next_pressure,
+                                current_time: next_time,
+                                elephant_time: next.elephant_time,
+                            }
+                        };
+                        new_states.push(state);
+                    }
+                }
+
+                data.lock().unwrap().extend(new_states);
+            });
+        }
+    });
+
+    max_pressure.load(Ordering::Relaxed)
 }

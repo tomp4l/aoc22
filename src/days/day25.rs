@@ -1,5 +1,5 @@
 pub fn run(lines: Vec<String>) -> Result<(), String> {
-    let sum: i64 = lines.iter().map(|l| snafu_to_i64(&l)).sum();
+    let sum: i64 = lines.iter().map(|l| snafu_to_i64(l)).sum();
 
     println!("Part 1 {}", i64_to_snafu(sum));
 
@@ -13,9 +13,9 @@ fn snafu_to_i64(snafu: &str) -> i64 {
         .enumerate()
         .map(|(i, c)| match c {
             '=' => -2 * pow5(i),
-            '-' => -1 * pow5(i),
+            '-' => -pow5(i),
             '0' => 0,
-            '1' => 1 * pow5(i),
+            '1' => pow5(i),
             '2' => 2 * pow5(i),
             c => panic!("unexpected {}", c),
         })
